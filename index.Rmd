@@ -1,14 +1,10 @@
 ---
 title: "Gov 50 Final Project"
-author: "Your Name Here"
+author: "Will Smialek"
 description: "My final project"
 output:
   distill::distill_article:
     self_contained: false
 ---
 
-
-
-## Project thoughts
-
-I am interested in exploring data related to...
+##I am interested in exploring data related to approval ratings for presidential candidates and the outcomes of those candidates' campaigns for higher office. I think discovering if there is a correlation between a high approval rating and an increase in odds of getting re-elected, would establish a basis for political scientists to analyze future elections; at the same time, this isn't exploring a question that has a definitive answer, as we are in the midst of a presidential re-election fight where the incumbent-presidential candidate leading in the polls has an historically low approval rating.

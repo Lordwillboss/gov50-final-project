@@ -4,7 +4,6 @@ author: "Will Smialek"
 description: "My final project"
 output:
   distill::distill_article:
-    self_contained: false
 ---
 
 ##I am interested in exploring data related to approval ratings for presidential candidates and the outcomes of those candidates' campaigns for higher office. I think discovering if there is a correlation between a high approval rating and an increase in odds of getting re-elected, would establish a basis for political scientists to analyze future elections; at the same time, this isn't exploring a question that has a definitive answer, as we are in the midst of a presidential re-election fight where the incumbent-presidential candidate leading in the polls has an historically low approval-rating.
@@ -15,7 +14,7 @@ polls<- read.csv("data/presidential_poll_averages_2020.csv")
 ```
 
 ##Milestone #2: 
-For my data set, I will be using the 538 election analysis data for polling information for the 2020 election, and 538 data for the results of the 2020 election. My research question is measuring the difference between the aggregate of polls in different states, and the actual election results for each state; my research question is in which of the 7 battleground states was the polling error the greatest? For reference, the battleground states will be defined as NC, GA, NV, AZ, PA, MI and WI. My hypothesis is that the polling error was greatest in Georgia, as many polls that I saw in the lead up to the election did not have Biden competing with Trump, and, anecdotaly, the state hasn't voted for a Democratic presidential Candidate since Jimmy Carter. The explanatory variables I'm studying are both the average polling result, and the actual election outcome. My outcome variable is polling error, or the difference between the actual election result and the aggregate/average of pre-election polls. An observed pattern that would support my hypothesis would be an average mean in polling error for GA being higher than the other battleground states, however, any mean that is higher in the other states would disprove my hypothesis. 
+For my data set, I will be using the 538 election analysis data for polling information for the 2020 election, and 538 data for the results of the 2020 election. My research question is measuring the difference between the aggregate of polls in different states, and the actual election results for each state; my research question is in which of the 7 battleground states was the polling error the greatest? For reference, the battleground states will be defined as NC, GA, NV, AZ, PA, MI and WI. My hypothesis is that the polling error was greatest in Georgia, as many polls that I saw in the lead up to the election did not have Biden competing with Trump, and, anecdotaly, the state hasn't voted for a Democratic presidential Candidate since Jimmy Carter. The explanatory variables I'm studying are both the average polling result, and the actual election outcome. My outcome variable is polling error, or the difference between the actual election result and the aggregate/average of pre-election polls. An observed pattern that would support my hypothesis would be an average mean in polling error for GA being higher than the other battleground states, however, any mean that is higher in the other states would disprove my hypothesis.
 
 ```{r}
 library(tidyverse)

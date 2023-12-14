@@ -5,21 +5,184 @@ description: "My final project"
 output:
   distill::distill_article:
 ---
+## Introduction
 
-##I am interested in exploring data related to approval ratings for presidential candidates and the outcomes of those candidates' campaigns for higher office. I think discovering if there is a correlation between a high approval rating and an increase in odds of getting re-elected, would establish a basis for political scientists to analyze future elections; at the same time, this isn't exploring a question that has a definitive answer, as we are in the midst of a presidential re-election fight where the incumbent-presidential candidate leading in the polls has an historically low approval-rating.
+In which battleground state was general election and primary election polling the most accurate? Which state was the most inaccurate? My project uses data to explore President Biden's actual election results vs. average polling results going into the 2020 Presidential Primaries and the 2020 General Election. My hypothesis is that the polling error was largest in Georgia, as many polls in the lead up to the General election did not have Biden competing with Trump, and, anecdotally, the state hasn't voted for a Democratic presidential Candidate since Jimmy Carter in 1976.
+
+In order to more closely analyze the error in a manner that provides meaningful results on how close/far the polls were, I'm choosing to focus on 6 different states commonly agreed on as so-called "swing states": North Carolina, Georgia, Arizona, Pennsylvania, Michigan, and Wisconsin. The reason for this is that if polling was off by 10 points in a state like Wyoming, it wouldn't have any substantial impact on the national election results; on the other hand, many states in both the 2020 general election and 2020 presidential primaries were decided by less than 0.1 points. 
+
+The explanatory variables I'm studying are both the average polling result, and the actual election outcome. My outcome variable is polling error, or the difference between the actual election result and the aggregate/average of pre-election polls. An observed pattern that would support my hypothesis would be an average mean in polling error for GA being higher than the other battleground states, however, any mean that is higher in the other states would disprove my hypothesis. 
 
 ```{r}
 library(tidyverse)
+library(colorRamps)
 polls<- read_csv("data/polls/president_polls.csv")
 ```
+## Data
 
-##Milestone #2: 
-For my data set, I will be using the 538 election analysis data for polling information for the 2020 election, and 538 data for the results of the 2020 election. My research question is measuring the difference between the aggregate of polls in different states, and the actual election results for each state; my research question is in which of the 7 battleground states was the polling error the greatest? For reference, the battleground states will be defined as NC, GA, NV, AZ, PA, MI and WI. My hypothesis is that the polling error was greatest in Georgia, as many polls that I saw in the lead up to the election did not have Biden competing with Trump, and, anecdotaly, the state hasn't voted for a Democratic presidential Candidate since Jimmy Carter. The explanatory variables I'm studying are both the average polling result, and the actual election outcome. My outcome variable is polling error, or the difference between the actual election result and the aggregate/average of pre-election polls. An observed pattern that would support my hypothesis would be an average mean in polling error for GA being higher than the other battleground states, however, any mean that is higher in the other states would disprove my hypothesis.
+For my data set, I will be using the 538 election analysis data for polling information for the 2020 election, and 538 data for the results of the 2020 election. The 538 data set for polling contains roughly 29,000 polls from all 50 states, while the 538 data set for results contains 7,400 official results by state for various different elections.
+
+The independent variable of actual results is measured after each state holds its respective election, and tabulates the official vote counts for the different candidates. The dependent variable, on the other hand, is the calculated percent error, which is found by taking the aggregate of each swing state's polls' for their respective elections, and subtracting that from the actual election results; the dependent variable, polls, is calculated using a survey method, and my research design utilizes a cross-sectional research design method, as it is comparing the percent errors across states. 
+
+To filter out the variables and states I was interested in observing, I first filtered the results data for the General Election by candidate_id==13256, which is President Biden's assigned ID within the data, and then further narrowed it down to include only the 6 key swing states I'm studying. Finally, once the data was filtered, I filtered the data one last time so that the table only showed the State abbreviation, full state name, and the percent that President Biden won in that state in the general election in 2020. The process was then repeated using the same filters and coding, except this time the results are for the the primary elections in those same swing states. Table 2 shows the election results for each of the respective swing states in the 2020 Democratic primary elections.
 
 ```{r}
-library(tidyverse)
-
 polls <- read.csv("data/polls/pres_poll.csv")
 results <- read.csv("data/results/pres_result.csv")
 ```
 
+```{r}
+filtered_results <- filter(results, candidate_id == 13256, state %in% 
+    c("Georgia", "Pennsylvania", "Michigan", "Arizona", "Wisconsin", "North Carolina"), stage == "general")
+
+filtered_results <- filtered_results |>
+  select(state_abbrev, state, percent)
+knitr::kable(filtered_results)
+```
+
+```{r}
+filtered_results2 <- filter(results, candidate_id == 13256, state %in% 
+    c("Georgia", "Pennsylvania", "Michigan", "Arizona", "Wisconsin", "North Carolina"), stage == "primary")
+
+filtered_results2 <- filtered_results2 |>
+  select(state_abbrev, state, percent)
+knitr::kable(filtered_results2)
+```
+After working with the results, I then began filtering and aggregating the multitude of polls that were conducted for both the Primary and General elections in the swing states. To begin with the General Election polls, I filtered through the polls first by candidate and then by swing state. Then, I used code to combine the average result of the polls from the "Polls" database for each state with the actual result from the "Results" dataset so the difference between the two variables can be compared. The table below shows the percent error for each state in the General Election, which is the calculated variable of interest.
+
+```{r}
+filtered_polls <- filter(polls, candidate_name == "Joseph R. Biden Jr.", state %in% 
+    c("Georgia", "Pennsylvania", "Michigan", "Arizona", "Wisconsin", "North Carolina"))
+
+combined_data <- filtered_polls |>
+  select(state, pct_estimate) |>
+  inner_join(filtered_results |>
+               select(state, percent), by = "state")
+
+combined_data <- combined_data |>
+  slice(1:6) |>
+  group_by(state) |>
+  mutate(mean_percent = mean(percent)) |>
+  mutate(percent_error = pct_estimate - mean_percent, na.rm = TRUE) |>
+  select(state, percent_error)
+
+knitr::kable(combined_data) 
+```
+To find the average polling aggregate for the Primary elections was a bit more difficult, as a result of the primary elections being held on different dates; as a result, I had to code a different specified date range for primary polls for each swing state; for instance, the polls that this model looked at for Arizona are form the dates 01/01/2020 - 03/17/2020, when the primary election was held in Arizona. Again, once the aggregate mean of the polls was calculated, that mean was then subtracted from the actual results in each state, to determine the percent error, which is what the table below shows.
+
+```{r}
+library(lubridate)
+polls3 <- polls
+polls3$modeldate <- mdy(polls3$modeldate)
+
+polls3 <- polls3 |>
+ filter(`state` == "Georgia" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-06-09") |
+      `state` == "Pennsylvania" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-06-02") |
+      `state` == "Michigan" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-03-10") |
+      `state` == "Arizona" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-03-17") |
+      `state` == "Wisconsin" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-04-07") |
+      `state` == "North Carolina" & modeldate >= as.Date("2020-01-01") & modeldate <= as.Date("2020-03-03"))
+
+filtered_polls3 <- filter(polls3, candidate_name == "Joseph R. Biden Jr.")
+
+combined_data3 <- filtered_polls3 |>
+  select(state, pct_estimate) |>
+  inner_join(filtered_results2 |>
+               select(state, percent), by = "state")
+
+combined_data3 <- combined_data3 |>
+  group_by(state) |>
+  mutate(mean_pct_estimate = mean(pct_estimate, na.rm = TRUE)) |>
+  mutate(percent_error2 = mean_pct_estimate - percent)
+
+final_table <- combined_data3 |>
+  slice(1) |>
+  select(state, percent_error2)
+
+knitr::kable(final_table) 
+```
+To help visualize these different percent errors by swing state, I created a bar graph that shows the percent error for the General and Primary elections, where the X-Axis is the different states, and the Y-Axis is the percent error. The first graph visualizes the percent error for the General Election, while the second graph visualizes the percent error for the Primary Elections.
+  
+```{r}
+bar_graph <- ggplot(data = combined_data, aes(x = state, y = percent_error)) +
+  geom_bar(stat = "identity", fill = "lightgoldenrod") +
+  labs(
+    x = "State",
+    y = "Percent Error",
+    title = "Percent Error in Battleground States in 2020 General Election")
+bar_graph
+```
+
+```{r}
+bar_graph2 <- ggplot(data = final_table, aes(x = state, y = percent_error2)) +
+  geom_bar(stat = "identity", fill = "midnightblue") + 
+  labs(
+    x = "State",
+    y = "Percent Error",
+    title = "Percent Error in Battleground States for respective Primary Elections")
+bar_graph2
+```
+The 2 bar plots below show the percent error for the 6 different swing states in the General and Primary elections' respectively. As the first visual shows, the percent error in the General Election among the 6 battleground states is roughly anywhere between 5 < PE < 2.5, where PE is the percent error. On the other hand, the PE was a much wider scale for the Primary Elections, where -40 < PE < 5, and the PE is hardly . The significance of these results, as well as potential reasons for them are discussed below in the analysis section.
+
+## Results
+
+To start the analysis of the selected outcome variable of which state had the largest aggregate polling error, I created a scatter plot that maps the General Election error variable on the Y-axis, and the Primary Election error variable on the X-axis. This helps visualize both variables at once, and is accomplished again by joining two variables across datasets, and organizing them by state.
+
+```{r}
+joined_data <- inner_join(final_table, combined_data, by = "state")
+```
+
+```{r}
+ggplot(joined_data, aes(x = percent_error2, y = percent_error, label = state)) +
+  geom_point(size = 2.75, color = "salmon2") +
+  geom_text(nudge_x = 0.4, nudge_y = 0.25,check_overlap = TRUE) +
+  labs(
+    title = "Scatter Plot of General vs. Primary Election Error",
+    x = "Primary Election Error",
+    y = "General Election Error")
+```
+As the chart above shows, we can see that some states are relatively more accurate than others, with North Carolina appearing to have some of the most accurate polling, while Arizona and Georgia seem to suffer from rather inaccurate polling. Notice that all of these observations are subjective, and can't really be backed up in a quantifiable manner; in order to mathematically quantify the actual polling error, I calculated the absolute value of the average Primary and General Election Polling errors for each of the 6 swing states, and combined them in the table below. As the table shows, Georgia had the largest combined polling error of nearly 40% across the Primary and General Elections, with Pennsylvania in second with a 31% polling error. Conversely, the most accurate polling in the battleground states across the two elections was North Carolina with a 6.5% error, and Michigan close behind with a 7.3% error. 
+
+```{r}
+combined_table <- tibble(
+  state = joined_data$state,
+  percent_error2 = abs(joined_data$percent_error2),
+  percent_error = abs(joined_data$percent_error),
+  Combined_Error = abs(joined_data$percent_error2) + abs(joined_data$percent_error)
+)
+combined_table <- combined_table |>
+  select(state, Combined_Error)
+knitr::kable(combined_table)
+```
+Now, going back to the scatterplot, this graph can still be useful to us, as it allows us to compare and visualize the polling in each states in relative terms. But to actually draw comparisons beyond something like North Carolina being is "more accurate" because it's "further to the right", we can add X-Intercept and Y-Intercept lines to the scatterplot that represent the average General Election and Primary Election polling errors. 
+
+To start, we first briefly calculate the mean percent error for the General Election, which is 0.370. Next, we follow the same process, and calculate the mean percent error for the Primary Election, which is -17.76.
+
+```{r}
+mean_general_error <- mean(joined_data$percent_error, na.rm = TRUE)
+mean_general_error
+```
+```{r}
+mean_primary_error <- mean(joined_data$percent_error2, na.rm = TRUE)
+mean_primary_error
+```
+Once these values have been established, we can add them as Horizontal and Vertical lines on the original graph, as representations of the mean percent error among the 6 primary states for the General and Primary Election's respectively.
+
+Just to be clear, these lines don't evaluate which state had the "largest" percent error, which is the chief result of interest, but it does allow us to see how inaccurate the polls were on average in the lead up to the 2020 elections. This provides a valuable perspective, because we otherwise would be judging the polling at the baselines of Y=0 and X=0, or the actual results, because we lacked a way to compare just how accurate or inaccurate the polling was in these states. Essentially, these lines give us valuable context for just how accurate the polls were relative to the average polling environment.
+
+```{r}
+ggplot(joined_data, aes(x = percent_error2, y = percent_error, label = state)) +
+ geom_vline(xintercept = mean_primary_error, linetype = "dashed", color = "thistle3", size = 1, order = 1) +
+ geom_point(size = 2.75, color = "salmon2", order = 2) +
+  geom_text(nudge_x = 0.4, nudge_y = 0.25,check_overlap = TRUE, order = 2) +
+  geom_hline(yintercept = mean_general_error, linetype = "dashed", color = "thistle3", size = 1, order = 1) +
+  labs(
+    title = "Scatter Plot of General vs. Primary Election Error",
+    x = "Primary Election Error",
+    y = "General Election Error") 
+```
+As the graph above shows, polling errors in states like Wisconsin and Arizona were quite similar in the Primary Election to the average polling error. At the same time, polling in Georgia still massively unperformed in regards to average percent error relative to the average percent error. At the same time, though, the graph lines do yield some interesting information, including the fact that Georgia polling was highly inaccurate
+in the primary election, but wasn't the most inaccurate in General Election polling; that crown belongs to the states of Wisconsin and Michigan. 
+
+## Conclusion
+With regards to this research study's hypothesis, I originally hypothesized that Georgia was going to have the Largest Polling error, on the basis that a Democrat hadn't carried, or "won" the state in decades at the presidential level, and polling in the lead up to the election did not make it appear like President Biden was going to win the state. While my hypothesis was proven correct in that Georgia had the largest polling error, my reasoning was incorrect. As the last graph above shows, Georgia polling was incredibly inaccurate for the Primary election, but was not the most inaccurate for the general election polling. Some limitations of this analysis include the fact that the 2020 Democratic presidential primary race changes pretty dramatically in the span of 7 days at the end of February and into Early March, long after some of the primary polls had already been conducted, which are included in this dataset. As a result of the 7 day span, President Biden rapidly consolidated support in a manner that public polling wasn't able to accurately reflect for some time, and even when it did, the old polls averages were still included on the data conclusions reached in this study. Finally, another potential limitation could be the removal of missing values at various stages of this research study, which can lead to polling errors including under/over representation and reduced precision. If I had more resources, I would've expanded the data to include an analysis of all 50 states, not just the 6 battleground states.  
